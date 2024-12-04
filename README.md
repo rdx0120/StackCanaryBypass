@@ -1,7 +1,7 @@
 # Stack Canary Bypass Exploit Toolkit
 
 ## Overview
-This toolkit is designed to demonstrate and educate on the exploitation of buffer overflow vulnerabilities while preserving stack canary values. The Python script provided automates the process of exploiting a simple C program (`vulnerable.c`) that contains deliberate vulnerabilities, including weak stack canary implementations. This educational tool is intended to provide insights into system vulnerabilities, memory layout, and the basics of stack canaries and buffer overflows.
+This toolkit is designed to demonstrate and educate on the exploitation of buffer overflow vulnerabilities while preserving stack canary values. The Python script provided automates the process of exploiting a C program (`vulnerable.c`) that contains deliberate vulnerabilities, including weak stack canary implementations. This educational tool is intended to provide insights into system vulnerabilities, memory layout, and the basics of stack canaries and buffer overflows.
 
 ## Features
 - **Dynamic Binary Analysis**: Automatically extracts memory layout information such as buffer sizes and stack canary locations.
