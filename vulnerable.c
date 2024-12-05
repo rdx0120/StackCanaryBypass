@@ -2,26 +2,29 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <time.h> 
 
-// Stack canary value
 uint32_t canary;
 
-// Function pointer to simulate return flow
+// To simulate return flow
 void (*execute_payload)(void);
 
-// Placeholder function for exploitation
+// For exploitation
 void payload() {
     printf("Payload executed! You have bypassed the stack canary.\n");
     exit(0);
 }
 
-// Function to initialize the stack canary
+void deadcode() {
+    printf("Dead code executed!\n");
+    exit(0);
+}
+
 void initialize_canary() {
     canary = rand();
     printf("Stack canary initialized to: 0x%x\n", canary);
 }
 
-// Function to check the stack canary
 void check_canary(uint32_t user_canary) {
     if (user_canary != canary) {
         printf("Stack smashing detected! Exiting...\n");
@@ -29,15 +32,14 @@ void check_canary(uint32_t user_canary) {
     }
 }
 
-// Vulnerable function
 void vulnerable_function() {
-    char buffer[64];  // Buffer vulnerable to overflow
+    char buffer[64];  
     uint32_t local_canary = canary;
 
     printf("Enter some input:\n");
-    gets(buffer);  // Vulnerable to overflow
+    gets(buffer);  
 
-    // Check if the stack canary was tampered with
+    // if the stack canary was tampered with
     check_canary(local_canary);
 
     // If stack canary is intact, execute the function pointer
@@ -53,10 +55,9 @@ int main() {
     srand(time(NULL));
     initialize_canary();
 
-    // Set up a function pointer
-    execute_payload = NULL;
+    // Optionally set up a function pointer to deadcode for demonstration
+    execute_payload = deadcode;  // Change to NULL or payload() as needed for testing
 
-    // Call the vulnerable function
     vulnerable_function();
 
     return 0;
