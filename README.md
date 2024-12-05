@@ -28,8 +28,8 @@ This command compiles the C program with stack protection disabled to facilitate
 ### Setting up the Python Exploit Script
 1. Clone the repository to your local machine:
    ```bash
-   git clone https://github.com/yourusername/stack-canary-bypass.git
-   cd stack-canary-bypass
+   git clone https://github.com/yourusername/StackCanaryBypass.git
+   cd StackCanaryBypass
 
 2. Navigate to the directory containing the exploit script.
 
