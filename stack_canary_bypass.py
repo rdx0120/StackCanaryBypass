@@ -35,12 +35,15 @@ def create_payload(canary, deadcode_address):
     return payload
 
 def gdb_auto_run(binary_path, payload):
-    with open('gdb_script.gdb', "r") as file:
-        gdb_commands = file.read()
+    gdb_script_path = 'gdb_script.gdb'
 
-    gdb_process = subprocess.Popen(['gdb', '-x', gdb_script.gdb, binary_path], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    gdb_process = subprocess.Popen(['gdb', '-x', gdb_script_path, binary_path],
+                                   stdin=subprocess.PIPE,
+                                   stdout=subprocess.PIPE,
+                                   stderr=subprocess.PIPE)
     stdout, stderr = gdb_process.communicate(input=payload)
     gdb_process.wait()
+    
     print("GDB session has completed. Check gdb_script.gdb for details.")
     if gdb_process.returncode != 0:
         print("GDB did not exit cleanly")
