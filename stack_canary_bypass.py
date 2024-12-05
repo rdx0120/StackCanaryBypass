@@ -35,20 +35,20 @@ def create_payload(canary, deadcode_address):
 
 def gdb_auto_run(binary_path, payload):
     gdb_commands = """
-    set logging enabled on
-    set pagination off
-    set disable-randomization on
-    break vulnerable_function
-    commands
-        print 'Memory Layout at Breakpoint:\n'
-        x/24wx $esp
-        info registers
-    end
-    run
-    printf "Checking for deadcode execution...\\n"
-    continue
-    printf "Exploit Test Complete\\n"
-    """
+set logging enabled on
+set pagination off
+set disable-randomization on
+break vulnerable_function
+commands
+    print 'Memory Layout at Breakpoint:\\n'
+    x/24wx $esp
+    info registers
+end
+run
+printf "Checking for deadcode execution...\\n"
+continue
+printf "Exploit Test Complete\\n"
+"""
     gdb_script = "gdb_script.gdb"
     with open(gdb_script, "w") as f:
         f.write(gdb_commands)
