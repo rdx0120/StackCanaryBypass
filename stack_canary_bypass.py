@@ -45,9 +45,9 @@ def gdb_auto_run(binary_path, payload):
         info registers
     end
     run
-    printf "Checking for deadcode execution...\n"
+    printf "Checking for deadcode execution...\\n"
     continue
-    printf "Exploit Test Complete\n"
+    printf "Exploit Test Complete\\n"
     """
     gdb_script = "gdb_script.gdb"
     with open(gdb_script, "w") as f:
