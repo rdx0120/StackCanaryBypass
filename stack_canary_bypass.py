@@ -31,9 +31,9 @@ def create_dynamic_payload(canary, return_address):
     return payload
 
 def gdb_auto_run(binary_path, payload):
-    """Automatically run gdb with the given payload using a detailed gdb script."""
+    """Automatically run gdb with the given payload."""
     gdb_commands = """
-    set logging on
+    set logging enabled on
     set pagination off
     set disable-randomization on
     break vulnerable_function
@@ -51,8 +51,8 @@ def gdb_auto_run(binary_path, payload):
     with open(gdb_script, "w") as f:
         f.write(gdb_commands)
 
-    gdb_process = subprocess.Popen(['gdb', '-x', gdb_script, binary_path], stdin=subprocess.PIPE, text=True)
-    gdb_process.communicate(input=payload)
+    gdb_process = subprocess.Popen(['gdb', '-x', gdb_script, binary_path], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    gdb_process.communicate(input=payload.encode('utf-8'))
     gdb_process.wait()
     print("GDB session has completed. Check gdb_script.gdb for details.")
 
