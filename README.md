@@ -1,14 +1,14 @@
-# Stack Canary Bypass Exploit Toolkit
+# Stack Canary Bypass without Stack Smashing
 
 ## Overview
-This toolkit is designed to demonstrate and educate on the exploitation of buffer overflow vulnerabilities while preserving stack canary values. The Python script provided automates the process of exploiting a C program (`vulnerable.c`) that contains deliberate vulnerabilities, including weak stack canary implementations. This educational tool is intended to provide insights into system vulnerabilities, memory layout, and the basics of stack canaries and buffer overflows.
+This project demonstrates techniques in exploiting buffer overflow vulnerabilities by bypassing stack canary protections and redirecting execution flow to normally non executable or rarely executed sections of code (`deadcode`). The provided Python script automates the exploitation process of a deliberately vulnerable C program, showcasing how to manipulate execution flow in a controlled manner.
 
 ## Features
-- **Dynamic Binary Analysis**: Automatically extracts memory layout information such as buffer sizes and stack canary locations.
-- **Interactive Exploit Crafting**: Allows users to manually adjust exploit parameters in real-time.
-- **Automated GDB Integration**: Uses GDB to automate the debugging and exploit execution process.
-- **Visualization Tools**: Offers a simple visualization of memory layout to aid understanding of the exploit process.
-- **Automated Payload Testing**: Tests various payloads to find successful exploits against the buffer overflow vulnerability.
+- **Buffer Overflow Exploit**: Demonstrates how to overflow a buffer and manipulate the stack to bypass stack protections and execute arbitrary code.
+- **Deadcode Execution**: Exploits include triggering execution of `deadcode()`, a function normally not executed during standard program operations.
+- **Dynamic Memory Analysis**: Automatically extracts critical information such as stack canary values and function addresses from the binary for precise payload crafting.
+- **Automated GDB Integration**: Uses GDB to automate the debugging and execution process, providing real-time feedback on exploit effectiveness.
+- **Memory Layout Visualization**: Offers a simple visualization of critical memory layout points like canary locations and the address of `deadcode()` to aid understanding.
 
 ## Prerequisites
 - GCC for compiling the C program.
@@ -38,8 +38,12 @@ This command compiles the C program with stack protection disabled to facilitate
    sudo python3 stack_canary_bypass.py
 
 ## Usage
-After setting up, you can run the Python script as described above. The script will:
+Execute the following steps to use the exploit script effectively:
 
-- Analyze the binary to locate the canary and buffer addresses.
-- Create and test various payloads based on the extracted addresses.
-- Automatically run GDB to demonstrate how the exploit affects the program's execution.
+1. **Run the Script**: Launch `python3 stack_canary_bypass.py` from your command line to start the automated exploitation process.
+
+2. **Observe Automated Analysis**: Monitor as the script analyzes the binary, identifying crucial memory addresses such as the canary and `deadcode()` function locations.
+
+3. **Payload Execution**: The script will create and apply a payload via GDB, demonstrating how the execution flow is redirected to `deadcode()`.
+
+4. **Review Results**
