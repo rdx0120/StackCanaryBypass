@@ -18,8 +18,14 @@ void payload() {
 void deadcode() {
     printf("Dead code executed!\n");
     FILE *fp = fopen("deadcode_execution.txt", "a+");
-    fprintf(fp, "Dead code was executed at %s\n", __TIME__);
-    fclose(fp);
+    if (fp == NULL){
+        perror("Failed to open file");
+        exit(EXIT_FAILURE);
+    }
+    else:{
+        fprintf(fp, "Dead code was executed at %s\n", __TIME__);
+        fclose(fp);
+    }
 }
 
 void initialize_canary() {
