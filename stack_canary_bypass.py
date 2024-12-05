@@ -57,7 +57,9 @@ def gdb_auto_run(binary_path, payload):
     output, errors = gdb_process.communicate(input=payload)
     gdb_process.wait()
     print("GDB session has completed. Check gdb_script.gdb for details.")
-    print(output.decode())  # Optionally print output
+    print(output.decode())  
+    if errors:
+        print("Errors:" errors.decode())
 
 def main():
     print("Starting Stack Canary Bypass demonstration...")
