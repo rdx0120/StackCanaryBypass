@@ -20,10 +20,10 @@ void deadcode() {
         perror("Failed to open file");
         exit(EXIT_FAILURE);
     }
-    else:{
+    else {
         fprintf(fp, "Dead code was executed at %s\n", __TIME__);
         fclose(fp);
-    }
+    } 
 }
 
 void initialize_canary() {
