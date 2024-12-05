@@ -1,6 +1,7 @@
 import subprocess
 import struct
 import re
+import logging
 
 BINARY_PATH = "./vulnerable_binary"
 
