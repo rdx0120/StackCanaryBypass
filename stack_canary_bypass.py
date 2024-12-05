@@ -35,29 +35,13 @@ def create_payload(canary, deadcode_address):
     return payload
 
 def gdb_auto_run(binary_path, payload):
-    gdb_commands = """
-    set logging enabled on
-    set pagination off
-    set disable-randomization on
-    break vulnerable_function
-    commands
-        print 'Memory Layout at Breakpoint:\\n'
-        x/24wx $esp
-        info registers
-    end
-    run
-    printf "Checking for deadcode execution...\\n"
-    continue
-    printf "Exploit Test Complete\\n"
-    """
-    gdb_script = "gdb_script.gdb"
-    with open(gdb_script, "w") as f:
-        f.write(gdb_commands)
+    with open('gdb_script.gdb', "r") as file:
+        gdb_commands = file.read()
 
-    gdb_process = subprocess.Popen(['gdb', '-x', gdb_script, binary_path], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    gdb_process = subprocess.Popen(['gdb', '-x', gdb_script.gdb, binary_path], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     stdout, stderr = gdb_process.communicate(input=payload)
     gdb_process.wait()
-    
+    print("GDB session has completed. Check gdb_script.gdb for details.")
     if gdb_process.returncode != 0:
         print("GDB did not exit cleanly")
     if stderr:
