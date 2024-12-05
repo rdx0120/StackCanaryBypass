@@ -21,7 +21,7 @@ This project demonstrates techniques in exploiting buffer overflow vulnerabiliti
 ### Compiling the Vulnerable Program
 First, ensure GCC is installed on your system. You can compile the `vulnerable.c` file using the following command:
 ```bash
-gcc -o vulnerable_binary vulnerable.c -fno-stack-protector -z execstack -no-pie
+gcc -g -o vulnerable_binary vulnerable.c -fno-stack-protector -z execstack -no-pie
 ```
 This command compiles the C program with stack protection disabled to facilitate testing of the exploit
 
