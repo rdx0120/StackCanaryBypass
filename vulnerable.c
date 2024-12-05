@@ -6,10 +6,8 @@
 
 uint32_t canary;
 
-// To simulate return flow
 void (*execute_payload)(void);
 
-// For exploitation
 void payload() {
     printf("Payload executed! You have bypassed the stack canary.\n");
     exit(0);
@@ -47,10 +45,8 @@ void vulnerable_function() {
     printf("Enter some input:\n");
     gets(buffer);  
 
-    // if the stack canary was tampered with
     check_canary(local_canary);
 
-    // If stack canary is intact, execute the function pointer
     if (execute_payload) {
         execute_payload();
     } else {
@@ -59,12 +55,10 @@ void vulnerable_function() {
 }
 
 int main() {
-    // Seed randomness for canary
     srand(time(NULL));
     initialize_canary();
 
-    // Optionally set up a function pointer to deadcode for demonstration
-    execute_payload = deadcode;  // Change to NULL or payload() as needed for testing
+    execute_payload = deadcode; 
 
     vulnerable_function();
 
