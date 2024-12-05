@@ -38,14 +38,14 @@ def gdb_auto_run(binary_path, payload):
     set disable-randomization on
     break vulnerable_function
     commands
-        print 'Memory Layout at Breakpoint:'
+        print 'Memory Layout at Breakpoint:\n'
         x/24wx $esp
         info registers
     end
     run
-    echo 'Checking for deadcode execution...'
+    printf "Checking for deadcode execution...\n"
     continue
-    echo 'Exploit Test Complete'
+    printf "Exploit Test Complete\n"
     """
     gdb_script = "gdb_script.gdb"
     with open(gdb_script, "w") as f:
