@@ -14,7 +14,7 @@ Ever wondered how vulnerabilities bypass even the most tough defenses? That’s 
 - **GCC:** For compiling the C program.
 - **Python 3.x:** for running the exploit script.
 - **GDB:** For debugging and testing on Unix.
-- Curiosity: If you love understanding how things break (and get fixed), this is for you!
+- Curiosity: If you love understanding how things break (and get fixed)
 
 ## Setup Instructions
 
